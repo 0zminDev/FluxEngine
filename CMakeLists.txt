@@ -64,3 +64,14 @@ if(WIN32)
     )
 endif()
 
+# Add Catch2
+add_subdirectory(extern/Catch2)
+
+# Test executable
+file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
+add_executable(FluxEngineTests ${TEST_SOURCES})
+target_link_libraries(FluxEngineTests PRIVATE FluxEngine Catch2::Catch2WithMain)
+
+# Enable CTest
+enable_testing()
+add_test(NAME FluxEngineTests COMMAND FluxEngineTests)

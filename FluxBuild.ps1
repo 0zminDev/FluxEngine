@@ -71,7 +71,20 @@ switch ($Command.ToLower()) {
         }
     }
 
+    "test" {
+        Write-Host "Running unit tests..."
+
+        $MSYS2 = "C:/msys64/usr/bin/bash.exe"
+        $BuildDirMSYS = Convert-ToMSYSPath (Resolve-Path $BuildDir).Path
+
+        $CmdTest = "export PATH=/mingw64/bin:/usr/bin:`$PATH && ctest --output-on-failure --test-dir $BuildDirMSYS"
+        & $MSYS2 -lc $CmdTest
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+        Write-Host "Tests finished."
+    }
+
     default {
-        Write-Host "Unknown command. Use: build.ps1 build | run | rebuild | clean"
+        Write-Host "Unknown command. Use: build.ps1 build | run | rebuild | clean | test"
     }
 }

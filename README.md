@@ -62,6 +62,7 @@ Requirements:
 ./FluxBuild.ps1 build -Config Debug
 ./FluxBuild.ps1 run
 ./FluxBuild.ps1 rebuild
+./FluxBuild.ps1 test
 ./FluxBuild.ps1 clean
 ```
 
@@ -71,6 +72,7 @@ Requirements:
 ./FluxBuild.sh build
 ./FluxBuild.sh build Debug
 ./FluxBuild.sh run
+./FluxBuild.sh test
 ./FluxBuild.sh rebuild
 ```
 
@@ -81,9 +83,13 @@ Requirements:
 /sandbox/src          - Sandbox executable source
 /studio/src           - Studio executable source
 /games/testGame/src   - Example game source
+/tests                - Unit tests for engine and games
+/extern/Catch2        - Catch2 submodule
+/.github/workflows    - CI/CD
 /build                - Build directory (auto-created)
 ```
 
 - All binaries and shared libraries will be placed in build/bin/**platform**
 - Windows uses MSYS2 paths automatically
 - Linux/macOS scripts use native paths
+- Highly encouraging to add RootDir to PATH so you cann use FluxBuild directly

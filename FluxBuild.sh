@@ -15,7 +15,7 @@ function build() {
 
 function run() {
     if [[ ! -f "$SANDBOX_EXE" ]]; then
-        echo "⚠ Sandbox executable not found. Build first."
+        echo "Sandbox executable not found. Build first."
         exit 1
     fi
     "$SANDBOX_EXE"
@@ -26,10 +26,16 @@ function clean() {
     echo "Cleaned build directory."
 }
 
+run_tests() {
+    echo "Running unit tests..."
+    ctest --output-on-failure --test-dir "$BUILD_DIR"
+}
+
 case "$COMMAND" in
     build) build ;;
     run) run ;;
     rebuild) clean; build ;;
     clean) clean ;;
-    *) echo "Unknown command. Usage: $0 build|run|rebuild|clean" ;;
+    test) run_tests ;;
+    *) echo "Unknown command. Usage: build|run|rebuild|clean|test" ;;
 esac
