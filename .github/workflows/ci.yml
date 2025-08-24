@@ -26,14 +26,21 @@ jobs:
           sudo apt update
           sudo apt install -y clang cmake ninja-build libvulkan-dev
         else
-          brew install llvm cmake ninja
+          brew install llvm cmake ninja molten-vk
           export PATH="/usr/local/opt/llvm/bin:$PATH"
+          export VULKAN_SDK=$(brew --prefix)/opt/molten-vk
+          export PATH="$VULKAN_SDK/bin:$PATH"
+          export DYLD_LIBRARY_PATH="$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH"
+          export CMAKE_PREFIX_PATH="$VULKAN_SDK:$CMAKE_PREFIX_PATH"
         fi
 
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'
       run: |
         choco install cmake ninja
+        choco install vulkan-sdk -y
+        setx VULKAN_SDK "C:\Program Files\VulkanSDK\1.4.321.1"
+        setx PATH "%VULKAN_SDK%\Bin;%PATH%"
 
     - name: Configure CMake
       run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
