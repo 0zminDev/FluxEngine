@@ -1,4 +1,4 @@
-name: Build & Test FluxEngine
+name: FluxEngine CI
 
 on:
   push:
@@ -11,11 +11,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     env:
       BUILD_DIR: build
-      CONFIG: Debug
 
     steps:
       - name: Checkout repository
@@ -23,61 +22,39 @@ jobs:
         with:
           submodules: recursive
 
-      # ----------------------
-      # Dependencies Linux/macOS
-      # ----------------------
-      - name: Install dependencies (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Install dependencies
         run: |
-          if [ "$(uname)" = "Linux" ]; then
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
             sudo apt update
             sudo apt install -y clang cmake ninja-build libvulkan-dev
-          else
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
             brew install llvm cmake ninja
-            export PATH="/usr/local/opt/llvm/bin:$PATH"
-            # Install Vulkan SDK
-            brew install --cask lunarG-vulkan-sdk
-            export VULKAN_SDK="/Applications/LunarG Vulkan SDK/1.4.321.1/macOS"
-            export PATH="$VULKAN_SDK/bin:$PATH"
-            export DYLD_LIBRARY_PATH="$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH"
-            export CMAKE_PREFIX_PATH="$VULKAN_SDK:$CMAKE_PREFIX_PATH"
+            export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+            export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+            export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+            # Ręczna instalacja Vulkan SDK
+            curl -LO https://sdk.lunarg.com/sdk/download/latest/mac/vulkan-sdk.dmg
+            hdiutil attach vulkan-sdk.dmg
+            cp -R /Volumes/VulkanSDK/* /opt/vulkan-sdk
+            export VULKAN_SDK=/opt/vulkan-sdk
+            export PATH=$VULKAN_SDK/bin:$PATH
+            export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
+            export CMAKE_PREFIX_PATH=$VULKAN_SDK:$CMAKE_PREFIX_PATH
+          else
+            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+            choco install ninja -y
+            choco install vulkan-sdk -y
           fi
 
-      # ----------------------
-      # Dependencies Windows
-      # ----------------------
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
+      - name: Configure project
         run: |
-          choco install cmake ninja vulkansdk -y
-          setx VULKAN_SDK "C:\Program Files\VulkanSDK\1.4.321.1"
-          setx PATH "%VULKAN_SDK%\Bin;%PATH%"
+          cmake -S . -B $BUILD_DIR -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++
 
-      # ----------------------
-      # Configure CMake
-      # ----------------------
-      - name: Configure CMake
-        run: |
-          cmake -S . -B $BUILD_DIR -G Ninja -DCMAKE_BUILD_TYPE=$CONFIG \
-            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+      - name: Build project
+        run: cmake --build $BUILD_DIR
 
-      # ----------------------
-      # Build
-      # ----------------------
-      - name: Build
-        run: cmake --build $BUILD_DIR --config $CONFIG
-
-      # ----------------------
-      # Run tests
-      # ----------------------
       - name: Run unit tests
         run: ctest --output-on-failure --test-dir $BUILD_DIR
-
-      # ----------------------
-      # Upload build artifacts
-      # ----------------------
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: FluxEngine-${{ matrix.os }}
-          path: $BUILD_DIR/bin
