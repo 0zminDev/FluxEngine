@@ -23,28 +23,32 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
+        if: runner.os == 'Linux'
         run: |
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            sudo apt update
-            sudo apt install -y clang cmake ninja-build libvulkan-dev
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            brew install llvm cmake ninja
-            export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-            export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
-            export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
-            # Ręczna instalacja Vulkan SDK
-            curl -LO https://sdk.lunarg.com/sdk/download/latest/mac/vulkan-sdk.dmg
-            hdiutil attach vulkan-sdk.dmg
-            cp -R /Volumes/VulkanSDK/* /opt/vulkan-sdk
-            export VULKAN_SDK=/opt/vulkan-sdk
-            export PATH=$VULKAN_SDK/bin:$PATH
-            export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
-            export CMAKE_PREFIX_PATH=$VULKAN_SDK:$CMAKE_PREFIX_PATH
-          else
-            choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
-            choco install ninja -y
-            choco install vulkan-sdk -y
-          fi
+          sudo apt update
+          sudo apt install -y clang cmake ninja-build libvulkan-dev vulkan-utils spirv-tools glslang
+
+      - name: Install dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm cmake ninja
+          export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+          export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+          curl -LO https://sdk.lunarg.com/sdk/download/latest/mac/vulkan-sdk.dmg
+          hdiutil attach vulkan-sdk.dmg
+          cp -R /Volumes/VulkanSDK/* /opt/vulkan-sdk
+          export VULKAN_SDK=/opt/vulkan-sdk
+          export PATH=$VULKAN_SDK/bin:$PATH
+          export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
+          export CMAKE_PREFIX_PATH=$VULKAN_SDK:$CMAKE_PREFIX_PATH
+
+      - name: Install dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install ninja -y
+          choco install vulkan-sdk -y
 
       - name: Configure project
         run: |
