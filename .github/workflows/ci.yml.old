@@ -1,0 +1,64 @@
+name: FluxEngine CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    env:
+      BUILD_DIR: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt install -y clang cmake ninja-build libvulkan-dev vulkan-utils spirv-tools glslang
+
+      - name: Install dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm cmake ninja
+          export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+          export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+          curl -LO https://sdk.lunarg.com/sdk/download/latest/mac/vulkan-sdk.dmg
+          hdiutil attach vulkan-sdk.dmg
+          cp -R /Volumes/VulkanSDK/* /opt/vulkan-sdk
+          export VULKAN_SDK=/opt/vulkan-sdk
+          export PATH=$VULKAN_SDK/bin:$PATH
+          export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
+          export CMAKE_PREFIX_PATH=$VULKAN_SDK:$CMAKE_PREFIX_PATH
+
+      - name: Install dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install ninja -y
+          choco install vulkan-sdk -y
+
+      - name: Configure project
+        run: |
+          cmake -S . -B $BUILD_DIR -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++
+
+      - name: Build project
+        run: cmake --build $BUILD_DIR
+
+      - name: Run unit tests
+        run: ctest --output-on-failure --test-dir $BUILD_DIR

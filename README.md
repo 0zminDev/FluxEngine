@@ -1,8 +1,35 @@
 # FluxEngine
 
-Cross-platform game engine project. Supports Windows, Linux, and macOS.
+[![CI/CD](https://github.com/0zminDev/FluxEngine/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/0zminDev/FluxEngine/actions/workflows/ci-cd.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](docs/CI-CD.md)
+[![Vulkan](https://img.shields.io/badge/Vulkan-1.3.290.0-red.svg)](https://vulkan.lunarg.com/)
 
-Requirements:
+Cross-platform game engine project built with C++23 and Vulkan. Supports Windows, Linux, and macOS with comprehensive CI/CD pipeline.
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone --recursive https://github.com/0zminDev/FluxEngine.git
+cd FluxEngine
+
+# Test your environment (optional)
+./scripts/local-ci-test.sh  # Linux/macOS
+# or
+.\scripts\local-ci-test.ps1  # Windows
+
+# Build and run
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/bin/windows/Sandbox  # Linux/macOS
+# or
+.\build\bin\windows\Sandbox.exe  # Windows
+```
+
+For detailed setup instructions, see the platform-specific sections below.
+
+## Requirements
 
 - Windows 10/11, Linux (Ubuntu/Debian), macOS
 - C++23 compiler (clang)
