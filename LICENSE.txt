@@ -1,0 +1,22 @@
+FluxEngine License (FEL License) v1.1
+
+Copyright (c) 2025 Jakub Oźmina
+
+1. Permissions
+   - You may download and use the source code of this engine for personal, educational, or testing purposes.
+   - You may modify the source code for your own non-commercial use.
+
+2. Restrictions
+   - You may not redistribute, resell, or deploy this engine or any modified version without the explicit written consent of the author.
+   - You may not use this engine in any commercial product without a separate license agreement with the author.
+
+3. Derivative Works
+   - Creating derivative products (e.g., games, movies, animations or other engines) requires a separate commercial license if the product is intended for commercial use.
+   - Any modifications must clearly attribute the original author and reference the original repository.
+
+4. Disclaimer
+   - The engine is provided "as-is", without any warranty. The author is not responsible for any damages resulting from the use of the engine.
+   - However, the author will make reasonable efforts to provide assistance and support to anyone using the engine, regardless of whether they have a signed commercial license.
+
+5. Contact
+   - For licensing inquiries or commercial use permissions, contact: kubaozmina093@gmail.com
