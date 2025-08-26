@@ -19,7 +19,8 @@ A clear and concise description of any alternative solutions or features you've 
 **Additional context**
 Add any other context or screenshots about the feature request here.
 
-**Implementation considerations**
+## mplementation considerations
+
 - [ ] Does this affect the engine core?
 - [ ] Does this affect Vulkan rendering?
 - [ ] Does this require new dependencies?
