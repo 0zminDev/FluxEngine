@@ -37,7 +37,11 @@
 #define PLATFORM_LINUX   2
 #define PLATFORM_MACOS   3
 #define PLATFORM_ANDROID 4
-#define PLATFORM_WEB     5
+#define PLATFORM_IOS     5
+#define PLATFORM_TVOS   6
+#define PLATFORM_PLAYSTATION 7
+#define PLATFORM_XBOX   8
+#define PLATFORM_WEB     9
 #define PLATFORM_UNKNOWN 0
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -48,6 +52,14 @@
     #define CURRENT_PLATFORM PLATFORM_MACOS
 #elif defined(__ANDROID__)
     #define CURRENT_PLATFORM PLATFORM_ANDROID
+#elif defined(TARGET_OS_IOS) && TARGET_OS_IOS
+    #define CURRENT_PLATFORM PLATFORM_IOS
+#elif defined(TARGET_OS_TV) && TARGET_OS_TV
+    #define CURRENT_PLATFORM PLATFORM_TVOS
+#elif defined(__ORBIS__)
+    #define CURRENT_PLATFORM PLATFORM_PLAYSTATION
+#elif defined(__XBOXONE__) || defined(_GAMING_XBOX)
+    #define CURRENT_PLATFORM PLATFORM_XBOX
 #elif defined(__EMSCRIPTEN__)
     #define CURRENT_PLATFORM PLATFORM_WEB
 #else
