@@ -11,11 +11,9 @@ namespace Flux::Core::Formatters {
     
     class ConsoleFormatter : public ILogFormatter {
     private:
-        // ANSI color codes for different log levels
         static const std::unordered_map<Flux::Core::Types::Level, const char*> levelColors;
         static const std::unordered_map<Flux::Core::Types::Level, const char*> levelNames;
         
-        // Console formatting constants
         static constexpr const char* RESET_COLOR = "\033[0m";
         static constexpr const char* BOLD = "\033[1m";
         static constexpr const char* TIMESTAMP_COLOR = "\033[90m"; // Gray
@@ -27,6 +25,8 @@ namespace Flux::Core::Formatters {
     public:
         explicit ConsoleFormatter(bool colors = true, bool timestamp = true, bool context = true)
             : useColors(colors), showTimestamp(timestamp), showContext(context) {}
+        
+        virtual ~ConsoleFormatter();
         
         std::string format(const LogEntry& entry) const override;
         const char* getLevelString(Flux::Core::Types::Level level) const override;

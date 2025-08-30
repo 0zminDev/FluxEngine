@@ -7,14 +7,30 @@ int main() {
     Flux::Core::Engine engine;
     engine.init();
 
-    // Get a logger with Sandbox context (same instance, different context)
-    auto* sandboxLogger = engine.getLogger("Sandbox");
+    // Use RAII scoped context - automatically restores original context
+    {
+        auto scopedLogger = engine.getLogger()->withContext("Sandbox");
+        scopedLogger.Error("Something broke");
+        scopedLogger.Warn("Low memory");
+        scopedLogger.Info("Loading completed");
+    } // Original context automatically restored here
+
+    {
+        auto scopedLogger = engine.getLogger()->withContext("Sandbox2");
+        scopedLogger.Error("Something broke");
+        scopedLogger.Warn("Low memory");
+        scopedLogger.Info("Loading completed");
+    } // Original context automatically restored here
     
-    sandboxLogger->Error("Something broke");
-    sandboxLogger->Warn("Low memory");
-    sandboxLogger->Info("Loading completed");
-    
-    // No need to delete - it's the same instance as engine logger
+    {
+        auto* scopedLogger = engine.getLogger();
+        scopedLogger->Error("Something broke");
+        scopedLogger->Warn("Low memory");
+        scopedLogger->Info("Loading completed");
+    } // Original context automatically restored here
+
+    // Engine context is restored
+    engine.getLogger()->Info("Sandbox execution complete");
     
     std::cout << "Sandbox execution complete." << std::endl;
     return 0;
