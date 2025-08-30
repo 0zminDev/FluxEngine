@@ -1,5 +1,6 @@
 #pragma once
-#include "export.h"
+#include "logger/loggerExtensions.h"
+#include "platform/platformManager.h"
 
 namespace Flux::Core {
 	class EXPORT Engine {
@@ -9,10 +10,10 @@ namespace Flux::Core {
 			
 			void init();
 			
-			Logger* getLogger();
+			LoggerExtensions* getLogger();
 
 		private:
 			Flux::Platform::PlatformManager* platformManager;
-			Flux::Core::Logger* logger;
+			Flux::Core::LoggerExtensions* logger;
 	};
 }

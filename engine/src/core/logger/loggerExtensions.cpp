@@ -1,55 +1,59 @@
-#include "logger.h"
+#include "loggerExtensions.h"
 
+#include "export.h"
+#include "types.h"
+
+// TODO: Implement broadcast logging versions
 namespace Flux::Core {
-	void Logger::Trace(const char* msg) {
+	void LoggerExtensions::Trace(const char* msg) {
 		if (impl) {
             const char* enhancedMsg = msg;
-            impl->log(Level::LEVEL_TRACE, Color::COLOR_DEFAULT, enhancedMsg);
+            impl->log(Types::Level::LOG_TRACE, enhancedMsg);
         } else {
             // TODO: Implement Error Handling
         }
 	}
 
-	void Logger::Debug(const char* msg) {
+	void LoggerExtensions::Debug(const char* msg) {
 		if (impl) {
             const char* enhancedMsg = msg; // TODO: Add timestamp or other enhancements
-            impl->log(Level::LEVEL_DEBUG, Color::COLOR_BLUE, enhancedMsg);
+            impl->log(Types::Level::LOG_DEBUG, enhancedMsg);
         } else {
             // TODO: Implement Error Handling
         }
 	}
 
-	void Logger::Info(const char* msg) {
+	void LoggerExtensions::Info(const char* msg) {
 		if (impl) {
             const char* enhancedMsg = msg; // TODO: Add timestamp or other enhancements
-            impl->log(Level::LEVEL_INFO, Color::COLOR_GREEN, enhancedMsg);
+            impl->log(Types::Level::LOG_INFO, enhancedMsg);
         } else {
             // TODO: Implement Error Handling
         }
 	}
 
-	void Logger::Warn(const char* msg) {
+	void LoggerExtensions::Warn(const char* msg) {
 		if (impl) {
             const char* enhancedMsg = msg; // TODO: Add timestamp or other enhancements
-            impl->log(Level::LEVEL_WARN, Color::COLOR_YELLOW, enhancedMsg);
+            impl->log(Types::Level::LOG_WARN, enhancedMsg);
+        } else {
+            // TODO: Implement Error Handling
+        }
+	}
+    // TODO: Implements broadcast as default and only way of logging error and higher level logs
+	void LoggerExtensions::Error(const char* msg) {
+		if (impl) {
+            const char* enhancedMsg = msg; // TODO: Add timestamp or other enhancements
+            impl->log(Types::Level::LOG_ERROR, enhancedMsg);
         } else {
             // TODO: Implement Error Handling
         }
 	}
 
-	void Logger::Error(const char* msg) {
+	void LoggerExtensions::Fatal(const char* msg) {
 		if (impl) {
             const char* enhancedMsg = msg; // TODO: Add timestamp or other enhancements
-            impl->log(Level::LEVEL_ERROR, Color::COLOR_RED, enhancedMsg);
-        } else {
-            // TODO: Implement Error Handling
-        }
-	}
-
-	void Logger::Fatal(const char* msg) {
-		if (impl) {
-            const char* enhancedMsg = msg; // TODO: Add timestamp or other enhancements
-            impl->log(Level::LEVEL_FATAL, Color::COLOR_MAGENTA, enhancedMsg);
+            impl->log(Types::Level::LOG_FATAL, enhancedMsg);
         } else {
             // TODO: Implement Error Handling
         }

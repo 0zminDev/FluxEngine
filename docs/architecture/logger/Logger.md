@@ -1,304 +1,461 @@
-# FluxEngine Logger System Documentation
+# FluxEngine Logger System Architecture
 
 ## Overview
 
-The FluxEngine Logger System provides a comprehensive, cross-platform logging infrastructure designed for high-performance game development. Built following the inverse dependency inheritance pattern, it offers a clean interface abstraction with platform-specific implementations optimized for each target environment.
+The FluxEngine Logger System implements a sophisticated, multi-layered logging infrastructure following the **inverse dependency inheritance** pattern. This design provides a highly flexible, performant, and maintainable logging solution that scales from simple console output to complex multi-scope, multi-context production logging.
 
-## Architecture
+## Architectural Foundation
 
-### Core Design Principles
+### Inverse Dependency Inheritance Pattern
 
-- **Interface Abstraction**: Core logging interface (`ILogger`) defines contracts
-- **Platform Optimization**: Platform-specific implementations maximize performance
-- **Hierarchical Levels**: Six-tier logging levels for granular control
-- **Color Support**: Rich console output with platform-native color handling
-- **Scope-Based Processing**: Context-aware logging with scope management
-- **Performance-First**: Designed for zero-overhead when disabled
+The Logger system exemplifies FluxEngine's core architectural principle where:
 
-### Layer Structure
+- **Core Layer (Layer 1)**: Defines abstract interfaces and contracts
+- **Platform Layer (Layer 0)**: Provides concrete, platform-optimized implementations
+- **Application Layer (Layer 2)**: Consumes logging services through clean abstractions
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Application Layer                                           │
-│ ┌─────────────┬─────────────┬─────────────┬─────────────┐   │
-│ │   Sandbox   │   Studio    │  TestGame   │    Tests    │   │
-│ │ Logger::*() │ Logger::*() │ Logger::*() │ Logger::*() │   │
-│ └─────────────┴─────────────┴─────────────┴─────────────┘   │
-├─────────────────────────────────────────────────────────────┤
-│ Core Layer (engine/src/core/logger/)                       │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Logger Wrapper Class                                    │ │
-│ │ • Trace() • Debug() • Info() • Warn() • Error() • Fatal│ │
-│ │                                                         │ │
-│ │ ILogger Interface                                       │ │
-│ │ • log(Level, Color, message)                           │ │
-│ │ • Level enum • Color enum                              │ │
+│ │ LoggerExtensions::Trace/Debug/Info/Warn/Error/Fatal    │ │
+│ │ • High-level convenience methods                        │ │
+│ │ • Type-safe API for application code                   │ │
 │ └─────────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
+│ Core Layer (engine/src/core/logger/)                       │
+│ ┌───────────────┬───────────────┬─────────────────────────┐ │
+│ │   ILogger     │ ILoggerScope  │    ILoggerContext       │ │
+│ │ • log()       │ • log()       │ • getIdentifier()       │ │
+│ │ • broadcast() │ • addContext()│ • isValid()             │ │
+│ │ • useScope()  │ • setCurrent()│ • Platform-agnostic     │ │
+│ └───────────────┴───────────────┴─────────────────────────┘ │
+├─────────────────────────────────────────────────────────────┤
 │ Platform Layer (engine/src/platform/{os}/logger/)          │
-│ ┌─────────────┬─────────────┬─────────────┬─────────────┐   │
-│ │WindowsLogger│ LinuxLogger │ macOSLogger │AndroidLogger│   │
-│ │Console API  │ANSI Escapes │ANSI Escapes │Android Log  │   │
-│ │OutputDebug  │   syslog    │   os_log    │    API      │   │
-│ └─────────────┴─────────────┴─────────────┴─────────────┘   │
+│ ┌───────────────┬───────────────┬─────────────────────────┐ │
+│ │Platform Logger│Platform Scope │  Platform Context      │ │
+│ │• Windows API  │• Console/File │ • HANDLE/FILE*/fd       │ │
+│ │• Unix syslog  │• UI/API       │ • Platform handles      │ │
+│ │• OS-optimized │• Scope mgmt   │ • Resource management   │ │
+│ └───────────────┴───────────────┴─────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Current Implementation Status
+## Core Components
 
-### ✅ Implemented Features
+### 1. ILogger Interface (Core Layer)
 
-- **Core Interface**: `ILogger` abstraction with level and color support
-- **Logging Levels**: Six-tier hierarchy (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)
-- **Color Enumeration**: Seven color options for enhanced readability
-- **Wrapper Class**: Convenient `Logger` class with typed methods
-- **Platform Support**: Windows, Linux, macOS implementations
-- **Cross-Platform Build**: CMake integration with conditional compilation
-
-### 🚧 Basic Implementation
-
-- **Windows Logger**: Console output via `std::cout`
-- **Color Support**: Enum defined but not platform-implemented
-- **Level Filtering**: Interface ready but not implemented
-
-### ❌ Planned Features
-
-The following advanced features are designed but not yet implemented:
-
-#### Performance & Optimization
-- **Batch Processing**: Asynchronous log batching for high-throughput scenarios
-- **Build-Type Flushing**: Debug vs Release mode optimization strategies
-- **Zero-Cost Abstractions**: Compile-time level filtering
-
-#### Advanced Features
-- **Scope-Based Rich Text**: Context-aware formatting (console, file, UI)
-- **Tag System**: Custom logger types with filterable tags
-- **Time Management**: Timestamp formatting and timezone handling
-- **Profiling Integration**: Performance metrics and timing data
-- **Global/Local Level Control**: Runtime level filtering per scope
-- **Search Support**: Log querying and filtering capabilities
-
-## API Reference
-
-### Core Interface
+The foundational interface that defines the logging contract:
 
 ```cpp
 namespace Flux::Core {
-    // Logging levels in order of severity
-    enum Level {
-        LEVEL_TRACE,    // Detailed execution flow
-        LEVEL_DEBUG,    // Development debugging
-        LEVEL_INFO,     // General information
-        LEVEL_WARN,     // Warning conditions
-        LEVEL_ERROR,    // Error conditions
-        LEVEL_FATAL     // Fatal errors
-    };
-
-    // Color options for enhanced readability
-    enum Color {
-        COLOR_DEFAULT,  // System default
-        COLOR_RED,      // Errors, critical issues
-        COLOR_GREEN,    // Success, positive states
-        COLOR_BLUE,     // Information, neutral
-        COLOR_YELLOW,   // Warnings, caution
-        COLOR_CYAN,     // Debug information
-        COLOR_MAGENTA   // Special highlighting
-    };
-
-    // Core logging interface
     class ILogger {
+        std::vector<ILoggerScope*> scopes;
+        ILoggerScope* currentScope = nullptr;
     public:
-        virtual void log(Level level, Color color, const char* message) = 0;
         virtual ~ILogger() = default;
-    };
-
-    // Convenience wrapper class
-    class Logger {
-        ILogger* impl = nullptr;
-    public:
-        Logger(ILogger* loggerImpl) : impl(loggerImpl) {}
         
-        void Trace(const char* msg);  // LEVEL_TRACE
-        void Debug(const char* msg);  // LEVEL_DEBUG  
-        void Info(const char* msg);   // LEVEL_INFO
-        void Warn(const char* msg);   // LEVEL_WARN
-        void Error(const char* msg);  // LEVEL_ERROR
-        void Fatal(const char* msg);  // LEVEL_FATAL
+        // Primary logging methods
+        virtual void log(Types::Level level, const char* message) = 0;
+        virtual void broadcast(Types::Level level, const char* message) = 0;
+        
+        // Scope management
+        virtual const ILoggerScope* useScope(Types::Scope scope) const = 0;
+        virtual const bool addScope(Types::Scope scope) const = 0;
+        virtual const ILoggerScope* getCurrentScope() const = 0;
     };
 }
 ```
 
-### Platform Implementations
+**Responsibilities:**
 
-#### Windows Logger
+- Define logging contract for platform implementations
+- Manage collection of available scopes
+- Coordinate scope switching and lifecycle
+- Provide both targeted and broadcast logging capabilities
+
+### 2. LoggerExtensions (Application Interface)
+
+High-level convenience wrapper providing type-safe logging methods:
+
+```cpp
+namespace Flux::Core {
+    class LoggerExtensions {
+        ILogger* impl = nullptr;
+    public:
+        LoggerExtensions(ILogger* loggerImpl) : impl(loggerImpl) {}
+        
+        EXPORT void Trace(const char* msg);   // Types::Level::LOG_TRACE
+        EXPORT void Debug(const char* msg);   // Types::Level::LOG_DEBUG
+        EXPORT void Info(const char* msg);    // Types::Level::LOG_INFO
+        EXPORT void Warn(const char* msg);    // Types::Level::LOG_WARN
+        EXPORT void Error(const char* msg);   // Types::Level::LOG_ERROR
+        EXPORT void Fatal(const char* msg);   // Types::Level::LOG_FATAL
+    };
+}
+```
+
+**Design Benefits:**
+
+- **Type Safety**: Compile-time level verification
+- **Convenience**: Eliminates need to specify level explicitly
+- **Abstraction**: Hides platform complexity from application code
+- **Performance**: Direct delegation to platform implementation
+
+### 3. Scope System Architecture
+
+#### ILoggerScope Interface
+
+Scopes represent different logging environments with distinct behaviors:
+
+```cpp
+namespace Flux::Core {
+    class ILoggerScope {
+        std::vector<ILoggerContext*> contexts;
+        ILoggerContext* currentContext = nullptr;
+    public:
+        virtual ~ILoggerScope() = default;
+        virtual void log(Types::Level level, const char* message) = 0;
+        virtual bool addContext(const std::string& identifier) = 0;
+        virtual bool setCurrentContext(const std::string& identifier) = 0;
+    };
+}
+```
+
+#### Scope Types
+
+```cpp
+namespace Flux::Core::Types {
+    enum Scope {
+        CONSOLE,    // Terminal/console output
+        FILE,       // File system logging
+        UI,         // In-engine UI logging panels
+        API,        // External API/service logging
+        Broadcast   // Multi-scope simultaneous logging
+    };
+}
+```
+
+**Scope Responsibilities:**
+
+- **Context Management**: Handle multiple contexts within scope
+- **Output Routing**: Direct logs to appropriate destinations
+- **Format Control**: Apply scope-specific formatting
+- **Platform Adaptation**: Leverage platform-optimized APIs
+
+### 4. Context System Architecture
+
+#### ILoggerContext Interface
+
+Contexts represent specific handles/resources within a scope:
+
+```cpp
+namespace Flux::Core {
+    class ILoggerContext {
+    public:
+        virtual ~ILoggerContext() = default;
+        virtual bool isValid() const = 0;
+        virtual std::string getIdentifier() const = 0;
+    };
+}
+```
+
+**Context Examples by Scope:**
+
+| Scope | Context Examples | Platform Handles |
+|-------|------------------|------------------|
+| CONSOLE | stdout, stderr | Windows: HANDLE, Unix: fd |
+| FILE | log files, rotating logs | FILE*, file descriptors |
+| UI | debug panels, HUD elements | UI widget references |
+| API | network endpoints, services | socket handles, HTTP clients |
+
+**Context Design Principles:**
+
+- **Struct over Class**: Prefer data structures for explicit conventions
+- **No Logic**: Contexts hold only data and identifiers
+- **Resource Management**: Proper cleanup and validation
+- **Platform Abstraction**: Hide platform-specific handle types
+
+## Type System
+
+### Logging Levels
+
+```cpp
+namespace Flux::Core::Types {
+    enum class Level {
+        LOG_TRACE,    // Detailed execution flow
+        LOG_DEBUG,    // Development debugging information
+        LOG_INFO,     // General informational messages
+        LOG_WARN,     // Warning conditions
+        LOG_ERROR,    // Error conditions requiring attention
+        LOG_FATAL     // Critical errors causing termination
+    };
+}
+```
+
+### Color Support
+
+```cpp
+namespace Flux::Core::Types {
+    enum class LoggerColor {
+        DEFAULT,      // System default color
+        RED,          // Errors, critical issues
+        GREEN,        // Success, positive states
+        BLUE,         // Informational content
+        YELLOW,       // Warnings, caution
+        CYAN,         // Debug information
+        MAGENTA       // Special highlighting
+    };
+}
+```
+
+## Platform Implementation Strategy
+
+### Layer 0: Platform-Specific Implementations
+
+Each platform provides optimized implementations:
+
+#### Windows Implementation
+
 ```cpp
 namespace Flux::Platform {
     class WindowsLogger : public Flux::Core::ILogger {
-    public:
-        void log(Flux::Core::Level level, Flux::Core::Color color, 
-                const char* message) override;
+        // Windows Console API integration
+        // OutputDebugString support
+        // Event Log integration
+        // ANSI escape sequence support (Windows 10+)
+    };
+    
+    class WindowsConsoleScope : public Flux::Core::ILoggerScope {
+        // Console handle management
+        // Color attribute setting
+        // Unicode support
+    };
+    
+    struct WindowsConsoleContext {
+        HANDLE handle;
+        std::string identifier;
+        WORD defaultAttributes;
     };
 }
 ```
 
-**Current Implementation**: Basic console output via `std::cout`
+#### Unix/Linux Implementation
 
-**Planned Enhancements**:
-- Windows Console API color support
-- OutputDebugString integration
-- Event Log integration for production
-
-#### Linux Logger
 ```cpp
 namespace Flux::Platform {
-    class LinuxLogger : public Flux::Core::ILogger {
-    public:
-        void log(Flux::Core::Level level, Flux::Core::Color color, 
-                const char* message) override;
+    class UnixLogger : public Flux::Core::ILogger {
+        // syslog integration
+        // ANSI escape sequences
+        // File descriptor management
+    };
+    
+    class UnixConsoleScope : public Flux::Core::ILoggerScope {
+        // Terminal capability detection
+        // ANSI color support
+        // Signal handling
+    };
+    
+    struct UnixConsoleContext {
+        int fd;
+        std::string identifier;
+        bool colorSupported;
     };
 }
 ```
 
-**Planned Features**:
-- ANSI escape sequence color support
-- syslog integration
-- Journal (systemd) support
+## Orchestration and State Management
 
-#### macOS Logger
+### Logger Orchestration
+
+The main `ILogger` implementation orchestrates:
+
+1. **Scope Management**: Adding, removing, and switching between scopes
+2. **Message Routing**: Directing logs to appropriate scopes
+3. **Broadcasting**: Simultaneous logging to multiple scopes
+4. **Resource Lifecycle**: Proper initialization and cleanup
+
+### Scope Orchestration
+
+Each `ILoggerScope` implementation manages:
+
+1. **Context Collection**: Multiple contexts within the scope
+2. **Active Context**: Current target for log messages
+3. **Context Switching**: Dynamic context selection
+4. **Batching Logic**: Performance optimization through batching
+5. **State Persistence**: Maintaining scope-specific settings
+
+### Context State Management
+
+Contexts provide:
+
+1. **Handle Abstraction**: Platform-specific resource management
+2. **Validation**: Ensure context resources are valid
+3. **Identification**: Unique identifiers for context selection
+4. **Metadata**: Additional context-specific information
+
+## Advanced Features
+
+### Batching and Performance
+
 ```cpp
-namespace Flux::Platform {
-    class macOSLogger : public Flux::Core::ILogger {
-    public:
-        void log(Flux::Core::Level level, Flux::Core::Color color, 
-                const char* message) override;
+class BatchingScope : public ILoggerScope {
+    struct BatchEntry {
+        Types::Level level;
+        std::string message;
+        std::chrono::timestamp time;
     };
-}
+    
+    std::vector<BatchEntry> batch;
+    size_t batchSize = 100;
+    std::chrono::milliseconds flushInterval{100ms};
+    
+    void flushBatch();
+    void scheduledFlush();
+};
 ```
 
-**Planned Features**:
-- ANSI escape sequence color support
-- os_log integration
-- Console.app compatibility
+### Build Configuration Integration
 
-## Usage Examples
-
-### Basic Logging
 ```cpp
-#include "export.h"
+#ifdef FLUX_DEBUG_BUILD
+    #define FLUX_LOG_LEVEL Types::Level::LOG_TRACE
+#elif defined(FLUX_RELEASE_BUILD)
+    #define FLUX_LOG_LEVEL Types::Level::LOG_WARN
+#endif
 
-int main() {
-    // Platform manager initializes appropriate logger
-    auto* platformLogger = PlatformManager::getLogger();
-    Flux::Core::Logger logger(platformLogger);
-    
-    logger.Info("Application started");
-    logger.Warn("Configuration file not found, using defaults");
-    logger.Error("Failed to load texture: missing.png");
-    logger.Fatal("Critical system failure");
-    
-    return 0;
-}
-```
-
-### Custom Implementation
-```cpp
-class GameLogger : public Flux::Core::ILogger {
-    void log(Flux::Core::Level level, Flux::Core::Color color, 
-            const char* message) override {
-        // Custom game-specific logging logic
-        writeToGameLog(level, message);
-        if (level >= LEVEL_ERROR) {
-            notifyErrorHandler(message);
+// Compile-time level filtering
+template<Types::Level MinLevel>
+class LevelFilteredLogger : public ILogger {
+    void log(Types::Level level, const char* message) override {
+        if constexpr (level >= MinLevel) {
+            impl->log(level, message);
         }
     }
 };
 ```
 
-## Planned Feature Roadmap
+### Thread Safety
 
-### Phase 1: Color Implementation
-- [ ] Windows Console API color support
-- [ ] ANSI escape sequences for Unix platforms
-- [ ] Terminal capability detection
-- [ ] Fallback for non-color terminals
+```cpp
+class ThreadSafeLogger : public ILogger {
+    mutable std::shared_mutex scopeMutex;
+    mutable std::mutex logMutex;
+    
+    void log(Types::Level level, const char* message) override {
+        std::lock_guard<std::mutex> lock(logMutex);
+        // Thread-safe logging implementation
+    }
+};
+```
 
-### Phase 2: Advanced Formatting
-- [ ] Timestamp integration
-- [ ] Caller information (file, line, function)
-- [ ] Thread-safe logging
-- [ ] Custom format strings
+## Integration Patterns
 
-### Phase 3: Performance Optimization
-- [ ] Asynchronous logging queue
-- [ ] Batch processing with configurable buffer sizes
-- [ ] Memory pool allocation for log messages
-- [ ] Compile-time level filtering
+### Engine Integration
 
-### Phase 4: Scope & Context Management
-- [ ] Hierarchical scopes (System, Subsystem, Component)
-- [ ] Context-aware formatting (console vs file vs UI)
-- [ ] Tag-based filtering system
-- [ ] Runtime level configuration
+```cpp
+namespace Flux::Core {
+    class Engine {
+        std::unique_ptr<ILogger> logger;
+        std::unique_ptr<LoggerExtensions> loggerExtensions;
+        
+    public:
+        void initialize() {
+            // Platform manager creates appropriate logger
+            logger = platformManager->createLogger();
+            loggerExtensions = std::make_unique<LoggerExtensions>(logger.get());
+            
+            // Setup default scopes
+            logger->addScope(Types::Scope::CONSOLE);
+            logger->addScope(Types::Scope::FILE);
+            logger->useScope(Types::Scope::CONSOLE);
+        }
+        
+        LoggerExtensions* getLogger() { return loggerExtensions.get(); }
+    };
+}
+```
 
-### Phase 5: Advanced Features
-- [ ] Log rotation and archival
-- [ ] Network logging support
-- [ ] Performance profiling integration
-- [ ] Search and query capabilities
-- [ ] Real-time log monitoring
+### Application Usage
+
+```cpp
+#include "FluxEngine.h"
+
+int main() {
+    Flux::Core::Engine engine;
+    engine.initialize();
+    
+    auto* logger = engine.getLogger();
+    
+    // High-level convenience methods
+    logger->Info("Application started");
+    logger->Warn("Configuration file not found");
+    logger->Error("Failed to load resource");
+    
+    // Scope switching for different outputs
+    engine.getLogger()->useScope(Types::Scope::FILE);
+    logger->Debug("Detailed debug information saved to file");
+    
+    return 0;
+}
+```
 
 ## Performance Considerations
 
 ### Design Goals
-- **Zero Overhead**: Disabled log levels should compile to no-ops
-- **Minimal Allocation**: Avoid dynamic memory allocation in hot paths
-- **Thread Safety**: Support concurrent logging from multiple threads
-- **Low Latency**: Minimize impact on game loop performance
+
+1. **Zero-Cost Abstraction**: Disabled levels compile to no-ops
+2. **Minimal Allocation**: Avoid dynamic memory in hot paths
+3. **Thread Safety**: Lock-free where possible, efficient locking otherwise
+4. **Platform Optimization**: Leverage platform-specific optimizations
 
 ### Optimization Strategies
-- **Compile-Time Filtering**: Use preprocessor macros for release builds
-- **Async Processing**: Background thread for I/O operations
-- **Memory Pooling**: Pre-allocated message buffers
-- **Platform-Specific**: Leverage platform-optimized APIs
 
-## Integration with FluxEngine
+1. **Template Specialization**: Compile-time level filtering
+2. **Memory Pools**: Pre-allocated message buffers
+3. **Async Processing**: Background threads for I/O operations
+4. **Batch Processing**: Reduce system call overhead
+5. **Cache Optimization**: Minimize cache misses in logging paths
 
-### Platform Manager Integration
-The Logger system integrates with the Platform Manager for automatic initialization:
+## Best Practices
 
-```cpp
-// Platform Manager creates appropriate logger instance
-ILogger* logger = PlatformManager::createLogger();
+### For Platform Implementers
 
-// Engine components receive logger through dependency injection
-EngineSubsystem::initialize(logger);
-```
+1. **Follow Interface Contracts**: Implement all pure virtual methods
+2. **Resource Management**: Proper RAII and cleanup
+3. **Error Handling**: Graceful degradation on failures
+4. **Platform Optimization**: Use platform-specific APIs for performance
+5. **Thread Safety**: Consider concurrent access patterns
 
-### Build System Integration
-CMake automatically includes platform-specific logger implementations:
+### For Application Developers
 
-```cmake
-# Conditional compilation based on target platform
-if(WIN32)
-    target_sources(FluxEngine PRIVATE 
-        engine/src/platform/windows/logger/logger.cpp)
-elseif(UNIX AND NOT APPLE)
-    target_sources(FluxEngine PRIVATE 
-        engine/src/platform/linux/logger/logger.cpp)
-elseif(APPLE)
-    target_sources(FluxEngine PRIVATE 
-        engine/src/platform/macos/logger/logger.cpp)
-endif()
-```
+1. **Use LoggerExtensions**: Prefer high-level convenience methods
+2. **Appropriate Levels**: Choose correct log levels for messages
+3. **Performance Awareness**: Consider logging overhead in hot paths
+4. **Scope Management**: Use appropriate scopes for different outputs
+5. **Resource Cleanup**: Ensure proper logger lifecycle management
 
-## Contributing
+## Future Roadmap
 
-When extending the Logger system:
+### Phase 1: Foundation Completion
 
-1. **Follow Interface Contracts**: Implement `ILogger` completely
-2. **Platform Optimization**: Leverage platform-specific APIs
-3. **Performance First**: Consider impact on game loop performance
-4. **Test Coverage**: Include unit tests for new functionality
-5. **Documentation**: Update this document with new features
+- [ ] Complete platform implementations (Windows, Linux, macOS)
+- [ ] Basic scope implementations (Console, File)
+- [ ] Color support integration
+- [ ] Thread safety implementation
 
-The Logger system serves as a foundational component for FluxEngine's debugging, monitoring, and development workflow, designed to scale from simple console output to sophisticated production logging infrastructure.
+### Phase 2: Advanced Features
+
+- [ ] Asynchronous logging with batching
+- [ ] Rotating file logs with compression
+- [ ] Network logging support
+- [ ] Performance profiling integration
+
+### Phase 3: Production Features
+
+- [ ] Log aggregation and search
+- [ ] Real-time monitoring integration
+- [ ] Custom formatter plugins
+- [ ] Log replay and debugging tools
+
+The FluxEngine Logger System provides a robust foundation for sophisticated logging requirements while maintaining the simplicity and performance characteristics essential for game development.

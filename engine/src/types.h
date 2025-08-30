@@ -2,6 +2,10 @@
 #include <cstdint>
 #include "defines.h"
 
+#include "core/logger/types/loggerLevel.h"
+#include "core/logger/types/loggerColor.h"
+#include "core/logger/types/loggerScope.h"
+
 typedef std::int8_t   i8;
 typedef std::int16_t  i16;
 typedef std::int32_t  i32;

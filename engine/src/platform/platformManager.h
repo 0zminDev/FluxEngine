@@ -1,11 +1,11 @@
 #pragma once 
-#include "defines.h"
 #include <memory>
 
+#include "defines.h"
 #include "core/logger/logger.h"
 
 namespace Flux::Platform {
-	class EXPORT PlatformManager {
+	class PlatformManager {
 		public:
 			void initLogger();
 			Flux::Core::ILogger* getLogger() const;

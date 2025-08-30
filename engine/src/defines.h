@@ -1,20 +1,26 @@
 #pragma once
 
 #if defined(_WIN32)
-    #if defined(FLUX_EXPORT)
+    #if defined(FLUX_STATIC_BUILD)
+        #define EXPORT
+        #define IMPORT
+    #elif defined(FLUX_EXPORT)
         #define EXPORT __declspec(dllexport)
         #define IMPORT __declspec(dllimport)
     #else
-        #define EXPORT
-        #define IMPORT
+        #define EXPORT __declspec(dllimport)
+        #define IMPORT __declspec(dllimport)
     #endif
 #elif defined(__GNUC__) || defined(__clang__)
-    #if defined(FLUX_EXPORT)
+    #if defined(FLUX_STATIC_BUILD)
+        #define EXPORT
+        #define IMPORT
+    #elif defined(FLUX_EXPORT)
         #define EXPORT __attribute__((visibility("default")))
         #define IMPORT __attribute__((visibility("default")))
     #else
-        #define EXPORT
-        #define IMPORT
+        #define EXPORT __attribute__((visibility("default")))
+        #define IMPORT __attribute__((visibility("default")))
     #endif
 #else
     #define EXPORT

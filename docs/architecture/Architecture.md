@@ -192,4 +192,3 @@ New modules should follow this pattern:
 5. Ensure proper dependency ordering
 
 This architecture provides a solid foundation for building a cross-platform game engine while maintaining clean, maintainable, and extensible code.
-

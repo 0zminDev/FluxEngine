@@ -13,11 +13,11 @@ namespace Flux::Core {
 
 	void Engine::init() {
 		platformManager->initLogger();
-		logger = new Logger(platformManager->getLogger());
+		logger = new LoggerExtensions(platformManager->getLogger());
 		logger->Info("Engine initialized.");
 	}
 
-	Logger* Engine::getLogger() {
+	LoggerExtensions* Engine::getLogger() {
 		return logger;
 	}
 }
