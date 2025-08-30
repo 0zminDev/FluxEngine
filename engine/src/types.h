@@ -3,7 +3,6 @@
 #include "defines.h"
 
 #include "core/logger/types/loggerLevel.h"
-#include "core/logger/types/loggerColor.h"
 #include "core/logger/types/loggerScope.h"
 
 typedef std::int8_t   i8;

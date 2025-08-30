@@ -11,6 +11,7 @@ namespace Flux::Core {
 			void init();
 			
 			LoggerExtensions* getLogger();
+			LoggerExtensions* getLogger(const std::string& systemContext);
 
 		private:
 			Flux::Platform::PlatformManager* platformManager;

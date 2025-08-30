@@ -7,6 +7,9 @@
 
 namespace Flux::Core {
 	class ILogger {
+		protected:
+			std::string systemContext = "Unknown";
+			
 		public:
 			virtual ~ILogger() = default;
 
@@ -16,6 +19,9 @@ namespace Flux::Core {
 			virtual const ILoggerScope* useScope(Types::Scope scope) = 0;
 			virtual const ILoggerScope* addScope(Types::Scope scope) = 0;
 			virtual const ILoggerScope* getCurrentScope() const = 0;
+			
+			virtual void setSystemContext(const std::string& context) { systemContext = context; }
+			virtual const std::string& getSystemContext() const { return systemContext; }
 
 		private:
 			virtual bool scopeExists(Types::Scope scope) const = 0;

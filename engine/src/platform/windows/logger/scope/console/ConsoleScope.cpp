@@ -6,9 +6,27 @@
 #include <string>
 
 namespace Flux::Platform {
+
+    ConsoleScope::ConsoleScope() 
+        : formatter(std::make_unique<Flux::Core::Formatters::ConsoleFormatter>()) {
+    }
+    
+    ConsoleScope::~ConsoleScope() {
+        for (auto* context : consoleContexts) {
+            delete context;
+        }
+        consoleContexts.clear();
+    }
+
     void ConsoleScope::log(Flux::Core::Types::Level level, const char* message) {
         if (currentContext) {
-            writeToConsole(currentContext->getConsoleHandle(), message);
+            writeToConsole(level, message);
+        }
+    }
+    
+    void ConsoleScope::log(Flux::Core::Types::Level level, const char* message, const char* systemContext) {
+        if (currentContext) {
+            writeToConsole(level, message, systemContext);
         }
     }
 
@@ -68,13 +86,31 @@ namespace Flux::Platform {
 		}
 		return -1;
 	}
-	void ConsoleScope::writeToConsole(HANDLE consoleHandle, const char *message)
+	void ConsoleScope::writeToConsole(Flux::Core::Types::Level level, const char *message, const char* systemContext)
 	{
-		if (consoleHandle != INVALID_HANDLE_VALUE && message) {
+		if (currentContext && currentContext->getConsoleHandle() != INVALID_HANDLE_VALUE && message && formatter) {
+			// Create log entry
+			Flux::Core::Formatters::LogEntry entry;
+			entry.level = level;
+			entry.message = message;
+			entry.systemContext = systemContext;
+			entry.timestamp = nullptr; // Formatter will generate its own timestamp
+			
+			// Format the message
+			std::string formattedMessage = formatter->format(entry);
+			
+			// Write to console
 			DWORD bytesWritten;
-			std::string messageWithNewline = std::string(message) + "\n";
-			WriteConsoleA(consoleHandle, messageWithNewline.c_str(), 
-				static_cast<DWORD>(messageWithNewline.length()), &bytesWritten, nullptr);
+			WriteConsoleA(currentContext->getConsoleHandle(), formattedMessage.c_str(), 
+				static_cast<DWORD>(formattedMessage.length()), &bytesWritten, nullptr);
 		}
+	}
+	
+	void ConsoleScope::setFormatter(std::unique_ptr<Flux::Core::Formatters::ConsoleFormatter> newFormatter) {
+		formatter = std::move(newFormatter);
+	}
+	
+	Flux::Core::Formatters::ConsoleFormatter* ConsoleScope::getFormatter() const {
+		return formatter.get();
 	}
 }

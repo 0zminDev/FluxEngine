@@ -28,7 +28,7 @@ namespace Flux::Platform {
 			broadcast(level, message);
 		} else {
 			if (currentScope) {
-				currentScope->log(level, message);
+				currentScope->log(level, message, systemContext.c_str());
 			} else {
 				//TODO: IMPLEMENT ERROR HANDLING
 			}
@@ -38,7 +38,7 @@ namespace Flux::Platform {
 	void WindowsLogger::broadcast(Flux::Core::Types::Level level, const char *message) {
 		// Go through all scopes and log
 		for (const auto& scope : scopes) {
-			scope->log(level, message);
+			scope->log(level, message, systemContext.c_str());
 		}
 	}
 
