@@ -2,6 +2,9 @@
 #include <cstdint>
 #include "defines.h"
 
+#include "core/logger/types/loggerLevel.h"
+#include "core/logger/types/loggerScope.h"
+
 typedef std::int8_t   i8;
 typedef std::int16_t  i16;
 typedef std::int32_t  i32;
@@ -15,10 +18,10 @@ typedef std::uint64_t u64;
 typedef float  f32;
 typedef double f64;
 
-typedef bool b8;   // 1 bajt bool
-typedef int  b32;  // 4 bajty bool (czasem przydatne w API)
+typedef bool b8;
+typedef int  b32;
 
-typedef char c8;   // zwykły znak
+typedef char c8;
 typedef char16_t c16;
 typedef char32_t c32;
 
